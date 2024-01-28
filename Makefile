@@ -15,7 +15,7 @@ INCLUDES = -Iinclude
 LIBS = 
 
 #define the C++ source files
-SRCS = src/http_client.cpp
+SRCS = src/krypt.cpp src/http_client.cpp
 
 #define the C/C++ object files; replace every occurance of .c in SRCS with .o
 OBJS = $(SRCS:.c=.o)

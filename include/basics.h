@@ -44,6 +44,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <inttypes.h>
+#include <assert.h>
 
 
 #if defined(WINDOWS)

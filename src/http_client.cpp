@@ -14,11 +14,19 @@
 //          INCLUDES
 //=====================================================================================|
 #include "basics.h"
+#include "krypt.h"
 
 
+
+
+//=====================================================================================|
+//          MACROS
+//=====================================================================================|
 #define HTTP_PORT       80
 #define MAX_GET_CMD     255
 #define BUFFER_SIZE     255
+
+
 
 
 
@@ -45,7 +53,7 @@ int Parse_Proxy_Param(char *proxy_spec, char **proxy_host, int *proxy_port,
     if (!strncmp("http://", proxy_spec, 7))
         proxy_spec += 7;
 
-    if ( login_sep = strchr(proxy_spec, '@'))
+    if ( (login_sep = strchr(proxy_spec, '@')))
     {
         colon_sep = strchr(proxy_spec, ':');
         if ( !colon_sep || colon_sep > login_sep)
@@ -62,7 +70,7 @@ int Parse_Proxy_Param(char *proxy_spec, char **proxy_host, int *proxy_port,
     } // end if login
 
     tariler_sep = strchr(proxy_spec, '/');
-    if (*tariler_sep = '/')
+    if (*tariler_sep == '/')
         *tariler_sep = '\0';
 
     if ( (colon_sep = strchr(proxy_spec, ':')))
@@ -147,6 +155,26 @@ int Http_Get(int fds, char *host, char *path, const char *proxy_host,
     snprintf(get_command, MAX_GET_CMD, "Host: %s\r\n", host);
     if ( send(fds, get_command, strlen(get_command), 0) < 0)
         return -1;
+
+    if (proxy_user)
+    {
+        int credientials_len = strlen(proxy_user) + strlen(proxy_password) + 1;
+        char *proxy_cred = (char*)malloc(credientials_len);
+        char *auth_string = (char*)malloc( ((credientials_len * 4) / 3) + 1);
+        snprintf(proxy_cred, credientials_len, "%s:%s", proxy_user, proxy_password);
+
+        Base64_Encode((const unsigned char*)proxy_cred, credientials_len, (unsigned char*)auth_string);
+        snprintf( get_command, MAX_GET_CMD, "Proxy-Authorization: BASIC %s\r\n", auth_string );
+        if ( send(fds, get_command, strlen(get_command), 0) < 0)
+        {
+            free(proxy_cred);
+            free(auth_string);
+            return -1;
+        } // end if error
+
+        free(proxy_cred);
+        free(auth_string);
+    } // end if proxy_user
 
     snprintf(get_command, MAX_GET_CMD, "Connection: close\r\n\r\n");
     if ( send(fds, get_command, strlen(get_command), 0) < 0)
